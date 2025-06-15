@@ -1,17 +1,11 @@
 package iu;
 
-import java.awt.FlowLayout;
-import java.util.Enumeration;
-
 import javax.swing.*;
-
+import java.awt.*;
+import java.util.Enumeration;
 import dao.DocumentService;
-import om.Bibliotheque;
-import om.Cassette;
-import om.Document;
-import om.DocumentPasTrouve;
-import om.Livre;
-import om.Periodique;
+import om.*;
+import java.util.List;
 
 public class BibliothequeGUI extends JFrame {
     private Bibliotheque maBibliotheque;
@@ -19,10 +13,21 @@ public class BibliothequeGUI extends JFrame {
     public BibliothequeGUI() {
         maBibliotheque = new Bibliotheque("Bibliothèque Municipale");
 
-        setTitle("Bibliothèque");
+        setTitle("Méthiathèque");
         setSize(500, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(new FlowLayout());
+        setLocationRelativeTo(null);
+        setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));
+
+        // Titre
+        JLabel lblTitre = new JLabel("📚 Bibliothèque Municipale", SwingConstants.CENTER);
+        lblTitre.setFont(new Font("Serif", Font.BOLD, 24));
+        lblTitre.setAlignmentX(Component.CENTER_ALIGNMENT);
+        add(Box.createVerticalStrut(20));
+        add(lblTitre);
+
+        // Espacement
+        add(Box.createVerticalStrut(30));
 
         // Boutons
         JButton btnCreer = new JButton("Créer un document");
@@ -30,15 +35,25 @@ public class BibliothequeGUI extends JFrame {
         JButton btnRechercher = new JButton("Rechercher un document");
         JButton btnQuitter = new JButton("Quitter");
 
-        // Actions
+        // Centrage
+        btnCreer.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btnLister.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btnRechercher.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btnQuitter.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        // Écouteurs
         btnCreer.addActionListener(e -> ouvrirSousMenuCreation());
         btnLister.addActionListener(e -> afficherDocuments());
         btnRechercher.addActionListener(e -> rechercherDocument());
         btnQuitter.addActionListener(e -> System.exit(0));
 
+        // Ajout des boutons avec espace
         add(btnCreer);
+        add(Box.createVerticalStrut(10));
         add(btnLister);
+        add(Box.createVerticalStrut(10));
         add(btnRechercher);
+        add(Box.createVerticalStrut(10));
         add(btnQuitter);
 
         setVisible(true);
@@ -61,8 +76,7 @@ public class BibliothequeGUI extends JFrame {
             case 0 -> creerCassette();
             case 1 -> creerLivre();
             case 2 -> creerPeriodique();
-            default -> {
-            }
+            default -> {}
         }
     }
 
@@ -113,12 +127,52 @@ public class BibliothequeGUI extends JFrame {
     }
 
     private void afficherDocuments() {
-        StringBuilder listeDocs = new StringBuilder("📖 Documents dans la bibliothèque :\n");
-        Enumeration<Document> tousDocs = maBibliotheque.documents();
-        while (tousDocs.hasMoreElements()) {
-            listeDocs.append(tousDocs.nextElement().toString()).append("\n");
+        try {
+            List<Document> documents = DocumentService.chargerTous();
+
+         
+            String[] colonnes = {"Type", "Titre", "Auteur / Éditeur", "Pages / Durée", "Fréquence"};
+
+           
+            Object[][] data = new Object[documents.size()][colonnes.length];
+
+            for (int i = 0; i < documents.size(); i++) {
+                Document doc = documents.get(i);
+                String type = doc.getClass().getSimpleName();
+                String titre = doc.getTitre();
+                String auteurEditeur = "-";
+                String pagesDuree = "-";
+                String frequence = "-";
+
+                if (doc instanceof Livre l) {
+                    auteurEditeur = l.getAuteur() + " / " + l.getEditeur();
+                    pagesDuree = l.getPage() + " pages";
+                } else if (doc instanceof Cassette c) {
+                    auteurEditeur = c.getAuteur();
+                    pagesDuree = c.getDuree() + " min";
+                } else if (doc instanceof Periodique p) {
+                    pagesDuree = p.getPage() + " pages";
+                    frequence = p.getFrequence();
+                }
+
+                data[i][0] = type;
+                data[i][1] = titre;
+                data[i][2] = auteurEditeur;
+                data[i][3] = pagesDuree;
+                data[i][4] = frequence;
+            }
+
+            
+            JTable table = new JTable(data, colonnes);
+            JScrollPane scrollPane = new JScrollPane(table);
+            table.setFillsViewportHeight(true);
+
+          
+            JOptionPane.showMessageDialog(this, scrollPane, "📋 Documents en base", JOptionPane.INFORMATION_MESSAGE);
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "❌ Erreur d'affichage : " + e.getMessage());
         }
-        JOptionPane.showMessageDialog(this, listeDocs.toString());
     }
 
     private void rechercherDocument() {
@@ -127,11 +181,13 @@ public class BibliothequeGUI extends JFrame {
             Enumeration<Document> docsTrouves = maBibliotheque.trouverDocumentsIndex(critere);
             StringBuilder resultats = new StringBuilder("🔎 Résultats de recherche :\n");
             while (docsTrouves.hasMoreElements()) {
-                resultats.append(docsTrouves.nextElement().toString()).append("\n");
+                resultats.append(docsTrouves.nextElement()).append("\n");
             }
             JOptionPane.showMessageDialog(this, resultats.toString());
         } catch (DocumentPasTrouve e) {
             JOptionPane.showMessageDialog(this, "❌ Aucun document trouvé pour ce mot-clé.");
         }
     }
+
+   
 }

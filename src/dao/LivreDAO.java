@@ -1,6 +1,9 @@
 package dao;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+
 import om.Livre;
 import om.Document;
 
@@ -38,4 +41,57 @@ public class LivreDAO {
             System.err.println("❌ Erreur d’insertion livre : " + e.getMessage());
         }
     }
+    
+    public static List<Livre> tousLesLivres() {
+        List<Livre> livres = new ArrayList<>();
+
+        String query = """
+            SELECT d.id, d.titre, d.creation_date, l.auteur, l.pages, l.editeur
+            FROM document d
+            JOIN livre l ON d.id = l.id
+        """;
+
+        try (Connection con = ConnexionDB.getConnection();
+             PreparedStatement stmt = con.prepareStatement(query);
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                Livre livre = new Livre(
+                    rs.getString("titre"),
+                    rs.getInt("pages"),
+                    rs.getString("auteur"),
+                    rs.getString("editeur")
+                );
+                livres.add(livre);
+            }
+
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur lors du chargement des livres : " + e.getMessage());
+        }
+
+        return livres;
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

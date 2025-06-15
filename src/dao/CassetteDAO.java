@@ -1,6 +1,9 @@
 package dao;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+
 import om.Cassette;
 
 public class CassetteDAO {
@@ -33,4 +36,47 @@ public class CassetteDAO {
             System.err.println("❌ Erreur d’insertion cassette : " + e.getMessage());
         }
     }
+    
+    public static List<Cassette> toutesLesCassettes() {
+        List<Cassette> cassettes = new ArrayList<>();
+        String sql = """
+            SELECT d.titre, d.creation_date, c.auteur, c.duree
+            FROM document d
+            JOIN cassette c ON d.id = c.id
+        """;
+
+        try (Connection con = ConnexionDB.getConnection();
+             PreparedStatement stmt = con.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                Cassette cassette = new Cassette(
+                    rs.getString("titre"),
+                    rs.getString("auteur"),
+                    rs.getInt("duree")
+                );
+                // Tu peux formater ou utiliser la date séparément si tu veux l'afficher
+                // Date dateCreation = rs.getDate("creation_date");
+                cassettes.add(cassette);
+            }
+
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur lors du chargement des cassettes : " + e.getMessage());
+        }
+
+        return cassettes;
+    }
+    
 }
+
+
+
+
+
+
+
+
+
+
+
+
